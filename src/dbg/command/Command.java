@@ -1,7 +1,6 @@
 package dbg.command;
 
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.event.Event;
 import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.request.StepRequest;
 
@@ -9,13 +8,14 @@ public abstract class Command {
     private VirtualMachine vm;
     private LocatableEvent event;
     private StepRequest stepRequest;
+    private String commandLine;
 
     public Command(VirtualMachine vm) {
         this.vm = vm;
         stepRequest = null;
     }
 
-    public abstract void execute();
+    public abstract Object execute();
     public void print(){};
 
     public VirtualMachine getVm() {
@@ -40,5 +40,13 @@ public abstract class Command {
 
     public void setStepRequest(StepRequest stepRequest) {
         this.stepRequest = stepRequest;
+    }
+
+    public String getCommandLine() {
+        return commandLine;
+    }
+
+    public void setCommandLine(String commandLine) {
+        this.commandLine = commandLine;
     }
 }

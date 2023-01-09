@@ -9,9 +9,10 @@ public class ContinueCommand extends Command{
     }
 
     @Override
-    public void execute() {
+    public Object execute() {
         if(null != getStepRequest()) {
-            getStepRequest().disable();
+            getVm().eventRequestManager().deleteEventRequest(getStepRequest());
         }
+        return null;
     }
 }

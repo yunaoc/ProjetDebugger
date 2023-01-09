@@ -1,8 +1,9 @@
 package dbg.command;
 
-import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.StackFrame;
-import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.*;
+
+import java.util.List;
+import java.util.Map;
 
 public class FrameCommand extends Command{
 
@@ -14,17 +15,31 @@ public class FrameCommand extends Command{
     }
 
     @Override
-    public void execute() {
+    public Object execute() {
         try {
-            frame = getEvent().thread().frame(getEvent().thread().frameCount()-1);
+            frame = getEvent().thread().frame(0);
+            return frame;
         } catch (IncompatibleThreadStateException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     @Override
     public void print(){
-        //TODO Afficher les infos de la frame
-        System.out.println(frame);
+        System.out.println("Location : " + frame.location());
+        try {
+            List<LocalVariable> variables = frame.visibleVariables();
+            System.out.println("Variables : ");
+            Map<LocalVariable,Value> map = frame.getValues(variables);
+            variables.forEach(variable ->{
+                System.out.println("name : " + variable.name());
+                System.out.println("type name : " + variable.typeName());
+                System.out.println("value : " + map.get(variable));
+                System.out.println();
+            });
+        } catch (AbsentInformationException e) {
+            e.printStackTrace();
+        }
     }
 }

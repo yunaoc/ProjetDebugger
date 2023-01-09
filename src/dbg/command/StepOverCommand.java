@@ -10,10 +10,11 @@ public class StepOverCommand extends Command {
     }
 
     @Override
-    public void execute() {
+    public Object execute() {
         setStepRequest(getVm().eventRequestManager().createStepRequest(getEvent().thread(),
                 StepRequest.STEP_LINE,
                 StepRequest.STEP_OVER));
         getStepRequest().enable();
+        return null;
     }
 }
