@@ -6,8 +6,6 @@ import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.BreakpointRequest;
 
-import java.util.List;
-
 public class BreakCommand extends Command{
     public BreakCommand(VirtualMachine vm) {
         super(vm);
@@ -32,8 +30,19 @@ public class BreakCommand extends Command{
                 } catch (AbsentInformationException e) {
                     e.printStackTrace();
                 }
+//                if(null != getEvent() && getVm().eventRequestManager().stepRequests().isEmpty()) {
+//                    StepCommand stepCommand = new StepCommand(getVm());
+//                    stepCommand.setEvent(getEvent());
+//                    stepCommand.execute();
+//                    setStepRequest(stepCommand.getStepRequest());
+//                }
                 BreakpointRequest bpReq = getVm().eventRequestManager().createBreakpointRequest(location);
-                bpReq.enable();
+                if(getVm().eventRequestManager().breakpointRequests().size() == 1){
+                    bpReq.enable();
+                }else{
+                    bpReq.disable();
+                }
+                return bpReq;
             }
         }
         return null;

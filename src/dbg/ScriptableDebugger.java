@@ -15,22 +15,23 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ScriptableDebugger {
 
     private Class debugClass;
     private VirtualMachine vm;
     private Map<String, Command> mapCommands;
-    private LocatableEvent eventCommand;
+    private LocatableEvent eventCommandActual;
+    private Set<LocatableEvent> breakpointsEvents;
 
     public VirtualMachine connectAndLaunchVM() throws IOException, IllegalConnectorArgumentsException, VMStartException {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
         arguments.get("main").setValue(debugClass.getName());
         VirtualMachine vm = launchingConnector.launch(arguments);
-        eventCommand = null;
+        eventCommandActual = null;
+        breakpointsEvents = new HashSet<>();
         return vm;
     }
     public void attachTo(Class debuggeeClass) {
@@ -62,7 +63,7 @@ public class ScriptableDebugger {
         System.out.println("Debuggee output ===");
         InputStreamReader reader = new InputStreamReader(vm.process().getInputStream());
         OutputStreamWriter writer = new OutputStreamWriter(System.out);
-        Boolean isInitialized = false;
+        boolean isInitialized = false;
         String commandLine = "";
 
         while ((eventSet = vm.eventQueue().remove()) != null) {
@@ -86,8 +87,14 @@ public class ScriptableDebugger {
                 }
 
                 if(event instanceof BreakpointEvent){
-                    eventCommand = (BreakpointEvent) event;
-                    //TODO probleme deux event alors qu'on en save que un
+                    for(BreakpointRequest registerEvent : vm.eventRequestManager().breakpointRequests()){
+                        if(registerEvent.isEnabled() && event.request().equals(registerEvent)){
+                            eventCommandActual = (BreakpointEvent) event;
+                        }
+                        if(!registerEvent.isEnabled() && ((BreakpointEvent) event).location().equals(registerEvent.location())){
+                            eventCommandActual = (BreakpointEvent) event;
+                        }
+                    }
                 }
 
                 if(isInitialized){
@@ -96,11 +103,15 @@ public class ScriptableDebugger {
                     if(commandLine.contains("(")){
                         commandLine = commandLine.substring(0,commandLine.indexOf("("));
                     }
-                    mapCommands.get(commandLine).setEvent(eventCommand);
+                    mapCommands.get(commandLine).setEvent(eventCommandActual);
                     mapCommands.get(commandLine).setCommandLine(sub);
 
                     boolean isModifStepRequest = commandLine.equals("step") || commandLine.equals("step-over") || commandLine.equals("continue");
 
+//                    if(null != mapCommands.get("break").getStepRequest()){
+//                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("break").getStepRequest());
+//                        mapCommands.get("break").setStepRequest(null);
+//                    }
                     if(null != mapCommands.get("step").getStepRequest() && isModifStepRequest){
                         mapCommands.get(commandLine).setStepRequest(mapCommands.get("step").getStepRequest());
                         vm.eventRequestManager().deleteEventRequest(mapCommands.get("step").getStepRequest());
@@ -109,7 +120,18 @@ public class ScriptableDebugger {
                         mapCommands.get(commandLine).setStepRequest(mapCommands.get("step-over").getStepRequest());
                         vm.eventRequestManager().deleteEventRequest(mapCommands.get("step-over").getStepRequest());
                     }
+                    //TODO clean-up
+                    if(commandLine.equals("break") && null != eventCommandActual){
+                        mapCommands.get("step").setEvent(eventCommandActual);
+                        vm.eventRequestManager().stepRequests().forEach(stepRequest ->vm.eventRequestManager().deleteEventRequest(stepRequest));
+                        mapCommands.get("step").execute();
+                    }
                     mapCommands.get(commandLine).execute();
+                    if(commandLine.equals("break") && null != eventCommandActual){
+                        mapCommands.get("step").setEvent(eventCommandActual);
+                        vm.eventRequestManager().stepRequests().forEach(stepRequest ->vm.eventRequestManager().deleteEventRequest(stepRequest));
+                        mapCommands.get("step").execute();
+                    }
                     mapCommands.get(commandLine).print();
                 }
 
