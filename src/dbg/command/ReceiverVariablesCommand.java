@@ -2,6 +2,7 @@ package dbg.command;
 
 import com.sun.jdi.*;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public class ReceiverVariablesCommand extends Command{
@@ -16,8 +17,10 @@ public class ReceiverVariablesCommand extends Command{
         ReceiverCommand receiverCommand = new ReceiverCommand(getVm());
         receiverCommand.setEvent(getEvent());
         receiver = (ObjectReferenceInfo) receiverCommand.execute();
-        //TODO retourner si non null
-        return receiver;
+        if(null != receiver.getObjectReference()){
+            return new ArrayList<>(receiver.getObjectReference().getValues(receiver.getLocation().declaringType().allFields()).values());
+        }
+        return new ArrayList<>();
     }
 
     @Override

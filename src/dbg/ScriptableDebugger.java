@@ -159,6 +159,7 @@ public class ScriptableDebugger {
         BreakOnceCommand breakOnceCommand = new BreakOnceCommand(vm);
         ReceiverCommand receiverCommand = new ReceiverCommand(vm);
         ReceiverVariablesCommand receiverVariablesCommand = new ReceiverVariablesCommand(vm);
+        SenderCommand senderCommand = new SenderCommand(vm);
 
         mapCommands.put("step", stepCommand);
         mapCommands.put("step-over", stepOverCommand);
@@ -174,6 +175,7 @@ public class ScriptableDebugger {
         mapCommands.put("break-once", breakOnceCommand);
         mapCommands.put("receiver", receiverCommand);
         mapCommands.put("receiver-variables", receiverVariablesCommand);
+        mapCommands.put("sender", senderCommand);
     }
 
 }
