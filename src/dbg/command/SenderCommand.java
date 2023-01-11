@@ -4,7 +4,7 @@ import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.VirtualMachine;
 
-public class SenderCommand extends Command{
+public class SenderCommand extends Command {
     public SenderCommand(VirtualMachine vm) {
         super(vm);
     }
@@ -12,7 +12,7 @@ public class SenderCommand extends Command{
     @Override
     public Object execute() {
         try {
-            if(getEvent().thread().frames().size() > 1){
+            if (getEvent().thread().frames().size() > 1) {
                 StackFrame frame = getEvent().thread().frame(1);
                 ObjectReferenceInfo objectReferenceInfo = new ObjectReferenceInfo();
                 objectReferenceInfo.setObjectReference(frame.thisObject());

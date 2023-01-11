@@ -5,7 +5,7 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 
-public class PrintVarCommand extends Command{
+public class PrintVarCommand extends Command {
 
     private Value valeur;
 
@@ -15,7 +15,7 @@ public class PrintVarCommand extends Command{
 
     @Override
     public Object execute() {
-        String variable = getCommandLine().substring(getCommandLine().indexOf("(")+1, getCommandLine().indexOf(")"));
+        String variable = getCommandLine().substring(getCommandLine().indexOf("(") + 1, getCommandLine().indexOf(")"));
         FrameCommand frameCommand = new FrameCommand(getVm());
         frameCommand.setEvent(getEvent());
         StackFrame frame = (StackFrame) frameCommand.execute();
@@ -28,7 +28,7 @@ public class PrintVarCommand extends Command{
     }
 
     @Override
-    public void print(){
+    public void print() {
         System.out.println(valeur);
         System.out.println();
     }

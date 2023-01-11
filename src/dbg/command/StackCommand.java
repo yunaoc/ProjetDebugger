@@ -7,7 +7,7 @@ import com.sun.jdi.VirtualMachine;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StackCommand extends Command{
+public class StackCommand extends Command {
 
     public StackCommand(VirtualMachine vm) {
         super(vm);
@@ -25,11 +25,9 @@ public class StackCommand extends Command{
     }
 
     @Override
-    public void print(){
+    public void print() {
         try {
-            getEvent().thread().frames().forEach(frame1->{
-                System.out.println(frame1.location().method().name());
-            });
+            getEvent().thread().frames().forEach(frame1 -> System.out.println(frame1.location().method().name()));
             System.out.println();
         } catch (IncompatibleThreadStateException e) {
             e.printStackTrace();

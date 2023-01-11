@@ -3,7 +3,7 @@ package dbg.command;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.VirtualMachine;
 
-public class ReceiverCommand extends Command{
+public class ReceiverCommand extends Command {
     public ReceiverCommand(VirtualMachine vm) {
         super(vm);
     }

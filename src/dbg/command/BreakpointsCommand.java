@@ -22,11 +22,9 @@ public class BreakpointsCommand extends Command {
         return breakpointRequestList;
     }
 
-     @Override
-    public void print(){
-        breakpointRequestList.forEach(breakpoint -> {
-            System.out.println(breakpoint.location().method().name() + " : " +breakpoint.location().lineNumber());
-        });
+    @Override
+    public void print() {
+        breakpointRequestList.forEach(breakpoint -> System.out.println(breakpoint.location().method().name() + " : " + breakpoint.location().lineNumber()));
         System.out.println();
-     }
+    }
 }

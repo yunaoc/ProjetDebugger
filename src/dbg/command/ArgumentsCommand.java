@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ArgumentsCommand extends Command{
+public class ArgumentsCommand extends Command {
     private Map<LocalVariable, Value> valeurs;
 
     public ArgumentsCommand(VirtualMachine vm) {
@@ -33,7 +33,7 @@ public class ArgumentsCommand extends Command{
     }
 
     @Override
-    public void print(){
+    public void print() {
         for (Map.Entry<LocalVariable, Value> entry : valeurs.entrySet()) {
             System.out.println(entry.getKey().name() + " -> " + entry.getValue());
         }

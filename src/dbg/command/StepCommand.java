@@ -11,10 +11,10 @@ public class StepCommand extends Command {
 
     @Override
     public Object execute() {
-         setStepRequest(getVm().eventRequestManager().createStepRequest(getEvent().thread(),
-                 StepRequest.STEP_MIN,
-                 StepRequest.STEP_INTO));
-         getStepRequest().enable();
-         return null;
+        setStepRequest(getVm().eventRequestManager().createStepRequest(getEvent().thread(),
+                StepRequest.STEP_MIN,
+                StepRequest.STEP_INTO));
+        getStepRequest().enable();
+        return null;
     }
 }

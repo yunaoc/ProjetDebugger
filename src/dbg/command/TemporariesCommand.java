@@ -5,7 +5,7 @@ import com.sun.jdi.*;
 import java.util.List;
 import java.util.Map;
 
-public class TemporariesCommand extends Command{
+public class TemporariesCommand extends Command {
 
     private StackFrame temporaries;
 
@@ -23,13 +23,11 @@ public class TemporariesCommand extends Command{
     }
 
     @Override
-    public void print(){
+    public void print() {
         try {
             List<LocalVariable> variables = temporaries.visibleVariables();
             Map<LocalVariable, Value> map = temporaries.getValues(variables);
-            variables.forEach(variable ->{
-                System.out.println(variable.name() + " -> "+ map.get(variable));
-            });
+            variables.forEach(variable -> System.out.println(variable.name() + " -> " + map.get(variable)));
             System.out.println();
         } catch (AbsentInformationException e) {
             e.printStackTrace();
