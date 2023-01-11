@@ -14,6 +14,7 @@ public class ReceiverCommand extends Command{
         frameCommand.setEvent(getEvent());
         StackFrame frame = (StackFrame) frameCommand.execute();
         ObjectReferenceInfo objectReferenceInfo = new ObjectReferenceInfo();
+        //TODO toujours null
         objectReferenceInfo.setObjectReference(frame.thisObject());
         objectReferenceInfo.setLocation(frame.location());
         return objectReferenceInfo;

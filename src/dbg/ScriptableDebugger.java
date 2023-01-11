@@ -120,6 +120,7 @@ public class ScriptableDebugger {
                             vm.eventRequestManager().stepRequests().forEach(stepRequest -> vm.eventRequestManager().deleteEventRequest(stepRequest));
                         }
                         mapCommands.get(commandLine).execute();
+                        //TODO return string
                         mapCommands.get(commandLine).print();
                 }
 
@@ -157,6 +158,7 @@ public class ScriptableDebugger {
         BreakpointsCommand breakpointsCommand = new BreakpointsCommand(vm);
         BreakOnceCommand breakOnceCommand = new BreakOnceCommand(vm);
         ReceiverCommand receiverCommand = new ReceiverCommand(vm);
+        ReceiverVariablesCommand receiverVariablesCommand = new ReceiverVariablesCommand(vm);
 
         mapCommands.put("step", stepCommand);
         mapCommands.put("step-over", stepOverCommand);
@@ -171,6 +173,7 @@ public class ScriptableDebugger {
         mapCommands.put("breakpoints", breakpointsCommand);
         mapCommands.put("break-once", breakOnceCommand);
         mapCommands.put("receiver", receiverCommand);
+        mapCommands.put("receiver-variables", receiverVariablesCommand);
     }
 
 }
