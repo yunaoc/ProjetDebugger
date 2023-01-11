@@ -1,23 +1,23 @@
 package ihm;
 
 import com.sun.jdi.*;
-import dbg.command.*;
+import dbg.JDISimpleDebuggee;
 
 import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class BoutonsMouseListener implements MouseListener {
     private MainFrame mainFrame;
-    private Map<String, Command> mapCommands;
+    private CommandeController debuggerInstance;
 
     public BoutonsMouseListener(MainFrame mainFrame){
-
         this.mainFrame = mainFrame;
+        debuggerInstance = new CommandeController();
+        debuggerInstance.attachTo(JDISimpleDebuggee.class);
     }
 
     @Override
@@ -25,8 +25,12 @@ public class BoutonsMouseListener implements MouseListener {
 
         switch (((JButton)e.getSource()).getActionCommand()){
             case "Continue" -> {
-                mapCommands.get("continue").execute();
-                updates();
+                //debuggerInstance.getMapCommands().get("continue").execute();
+                try {
+                    updates();
+                } catch (AbsentInformationException ex) {
+                    ex.printStackTrace();
+                }
             }
             case "Break" -> {}
             case "Step" -> {}
@@ -36,9 +40,9 @@ public class BoutonsMouseListener implements MouseListener {
     }
 
     private void updates() throws AbsentInformationException {
-        StackFrame frame = (StackFrame) mapCommands.get("frame").execute();
+        StackFrame frame = (StackFrame) debuggerInstance.getMapCommands().get("frame").execute();
 
-        List<Method> methods = (List<Method>) mapCommands.get("stack").execute();
+        List<Method> methods = (List<Method>) debuggerInstance.getMapCommands().get("stack").execute();
         List<String> methodesNoms = new ArrayList<>();
         for(Method nomMethod : methods){
             methodesNoms.add(nomMethod.name());
@@ -52,7 +56,7 @@ public class BoutonsMouseListener implements MouseListener {
         }
 
         List<String> arguments = new ArrayList<>();
-        Map<LocalVariable, Value> mapArguments = (Map<LocalVariable, Value>) mapCommands.get("arguments").execute();
+        Map<LocalVariable, Value> mapArguments = (Map<LocalVariable, Value>) debuggerInstance.getMapCommands().get("arguments").execute();
         for (Map.Entry<LocalVariable, Value> entry : mapArguments.entrySet()) {
             arguments.add (entry.getKey().name() + " -> " + entry.getValue());
         }
@@ -60,36 +64,6 @@ public class BoutonsMouseListener implements MouseListener {
         mainFrame.initTextContexte(frame.location().toString(),methodesNoms,temporaries,arguments);
         //TODO tests
     }
-
-    private void initializationCommands(){
-        mapCommands = new HashMap<>();
-        StepCommand stepCommand = new StepCommand(vm);
-        StepOverCommand stepOverCommand = new StepOverCommand(vm);
-        ContinueCommand continueCommand = new ContinueCommand(vm);
-        FrameCommand frameCommand = new FrameCommand(vm);
-        TemporariesCommand temporariesCommand = new TemporariesCommand(vm);
-        StackCommand stackCommand = new StackCommand(vm);
-        MethodCommand methodCommand = new MethodCommand(vm);
-        ArgumentsCommand argumentsCommand = new ArgumentsCommand(vm);
-        PrintVarCommand printVarCommand = new PrintVarCommand(vm);
-        BreakCommand breakCommand = new BreakCommand(vm);
-        BreakpointsCommand breakpointsCommand = new BreakpointsCommand(vm);
-
-        mapCommands.put("step", stepCommand);
-        mapCommands.put("step-over", stepOverCommand);
-        mapCommands.put("continue", continueCommand);
-        mapCommands.put("frame", frameCommand);
-        mapCommands.put("temporaries", temporariesCommand);
-        mapCommands.put("stack", stackCommand);
-        mapCommands.put("method", methodCommand);
-        mapCommands.put("arguments", argumentsCommand);
-        mapCommands.put("print-var", printVarCommand);
-        mapCommands.put("break", breakCommand);
-        mapCommands.put("breakpoints", breakpointsCommand);
-    }
-
-
-
 
 
     @Override

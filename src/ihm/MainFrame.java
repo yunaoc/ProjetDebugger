@@ -74,7 +74,6 @@ public class MainFrame extends JFrame {
         breakpointsPanel.setBackground(Color.GREEN);
         affichageBreakpoints = new JTextArea();
         //TODO tests
-        AjouterLigneBreakpoints();
         breakpointsPanel.add(affichageBreakpoints);
         return breakpointsPanel;
     }
