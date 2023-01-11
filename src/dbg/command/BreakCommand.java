@@ -30,18 +30,15 @@ public class BreakCommand extends Command{
                 } catch (AbsentInformationException e) {
                     e.printStackTrace();
                 }
-//                if(null != getEvent() && getVm().eventRequestManager().stepRequests().isEmpty()) {
-//                    StepCommand stepCommand = new StepCommand(getVm());
-//                    stepCommand.setEvent(getEvent());
-//                    stepCommand.execute();
-//                    setStepRequest(stepCommand.getStepRequest());
-//                }
-                BreakpointRequest bpReq = getVm().eventRequestManager().createBreakpointRequest(location);
-                if(getVm().eventRequestManager().breakpointRequests().size() == 1){
-                    bpReq.enable();
-                }else{
-                    bpReq.disable();
+                if(null != getEvent() && getVm().eventRequestManager().stepRequests().isEmpty()) {
+                    StepCommand stepCommand = new StepCommand(getVm());
+                    stepCommand.setEvent(getEvent());
+                    getVm().eventRequestManager().stepRequests().forEach(stepRequest ->getVm().eventRequestManager().deleteEventRequest(stepRequest));
+                    stepCommand.execute();
+                    setStepRequest(stepCommand.getStepRequest());
                 }
+                BreakpointRequest bpReq = getVm().eventRequestManager().createBreakpointRequest(location);
+                bpReq.enable();
                 return bpReq;
             }
         }

@@ -23,7 +23,6 @@ public class ScriptableDebugger {
     private VirtualMachine vm;
     private Map<String, Command> mapCommands;
     private LocatableEvent eventCommandActual;
-    private Set<LocatableEvent> breakpointsEvents;
 
     public VirtualMachine connectAndLaunchVM() throws IOException, IllegalConnectorArgumentsException, VMStartException {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
@@ -31,7 +30,6 @@ public class ScriptableDebugger {
         arguments.get("main").setValue(debugClass.getName());
         VirtualMachine vm = launchingConnector.launch(arguments);
         eventCommandActual = null;
-        breakpointsEvents = new HashSet<>();
         return vm;
     }
     public void attachTo(Class debuggeeClass) {
@@ -87,11 +85,16 @@ public class ScriptableDebugger {
                 }
 
                 if(event instanceof BreakpointEvent){
+                    List<BreakpointRequest> list = vm.eventRequestManager().breakpointRequests();
                     for(BreakpointRequest registerEvent : vm.eventRequestManager().breakpointRequests()){
                         if(registerEvent.isEnabled() && event.request().equals(registerEvent)){
                             eventCommandActual = (BreakpointEvent) event;
+
                         }
-                        if(!registerEvent.isEnabled() && ((BreakpointEvent) event).location().equals(registerEvent.location())){
+                        if(registerEvent.isEnabled() && ((BreakpointEvent) event).location().equals(registerEvent.location())){
+                            if(mapCommands.get("break-once").getBreakpointsToDisable().contains(eventCommandActual.request())){
+                                eventCommandActual.request().disable();
+                            }
                             eventCommandActual = (BreakpointEvent) event;
                         }
                     }
@@ -103,36 +106,21 @@ public class ScriptableDebugger {
                     if(commandLine.contains("(")){
                         commandLine = commandLine.substring(0,commandLine.indexOf("("));
                     }
-                    mapCommands.get(commandLine).setEvent(eventCommandActual);
-                    mapCommands.get(commandLine).setCommandLine(sub);
+                    while (!mapCommands.containsKey(commandLine)){
+                        commandLine = readCommand();
+                        sub = commandLine;
+                        if(commandLine.contains("(")){
+                            commandLine = commandLine.substring(0,commandLine.indexOf("("));
+                        }
+                    }
+                        mapCommands.get(commandLine).setEvent(eventCommandActual);
+                        mapCommands.get(commandLine).setCommandLine(sub);
 
-                    boolean isModifStepRequest = commandLine.equals("step") || commandLine.equals("step-over") || commandLine.equals("continue");
-
-//                    if(null != mapCommands.get("break").getStepRequest()){
-//                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("break").getStepRequest());
-//                        mapCommands.get("break").setStepRequest(null);
-//                    }
-                    if(null != mapCommands.get("step").getStepRequest() && isModifStepRequest){
-                        mapCommands.get(commandLine).setStepRequest(mapCommands.get("step").getStepRequest());
-                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("step").getStepRequest());
-                    }
-                    else if(null != mapCommands.get("step-over").getStepRequest() && isModifStepRequest){
-                        mapCommands.get(commandLine).setStepRequest(mapCommands.get("step-over").getStepRequest());
-                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("step-over").getStepRequest());
-                    }
-                    //TODO clean-up
-                    if(commandLine.equals("break") && null != eventCommandActual){
-                        mapCommands.get("step").setEvent(eventCommandActual);
-                        vm.eventRequestManager().stepRequests().forEach(stepRequest ->vm.eventRequestManager().deleteEventRequest(stepRequest));
-                        mapCommands.get("step").execute();
-                    }
-                    mapCommands.get(commandLine).execute();
-                    if(commandLine.equals("break") && null != eventCommandActual){
-                        mapCommands.get("step").setEvent(eventCommandActual);
-                        vm.eventRequestManager().stepRequests().forEach(stepRequest ->vm.eventRequestManager().deleteEventRequest(stepRequest));
-                        mapCommands.get("step").execute();
-                    }
-                    mapCommands.get(commandLine).print();
+                        if (commandLine.equals("step") || commandLine.equals("step-over") || commandLine.equals("continue")) {
+                            vm.eventRequestManager().stepRequests().forEach(stepRequest -> vm.eventRequestManager().deleteEventRequest(stepRequest));
+                        }
+                        mapCommands.get(commandLine).execute();
+                        mapCommands.get(commandLine).print();
                 }
 
                 System.out.println(event.toString());
@@ -167,6 +155,8 @@ public class ScriptableDebugger {
         PrintVarCommand printVarCommand = new PrintVarCommand(vm);
         BreakCommand breakCommand = new BreakCommand(vm);
         BreakpointsCommand breakpointsCommand = new BreakpointsCommand(vm);
+        BreakOnceCommand breakOnceCommand = new BreakOnceCommand(vm);
+        ReceiverCommand receiverCommand = new ReceiverCommand(vm);
 
         mapCommands.put("step", stepCommand);
         mapCommands.put("step-over", stepOverCommand);
@@ -179,6 +169,8 @@ public class ScriptableDebugger {
         mapCommands.put("print-var", printVarCommand);
         mapCommands.put("break", breakCommand);
         mapCommands.put("breakpoints", breakpointsCommand);
+        mapCommands.put("break-once", breakOnceCommand);
+        mapCommands.put("receiver", receiverCommand);
     }
 
 }

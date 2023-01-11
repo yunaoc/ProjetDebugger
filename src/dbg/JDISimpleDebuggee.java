@@ -5,6 +5,11 @@ public class JDISimpleDebuggee {
     public static void main(String[] args) {
         String description = "Simple power printer";
         System.out.println(description + " -- starting");
+        int i = 0;
+        while(i < 3){
+            System.out.println(i);
+            i++;
+        }
         int x = 40;
         int power = 2;
         printPower(x, power);

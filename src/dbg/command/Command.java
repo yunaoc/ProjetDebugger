@@ -2,19 +2,28 @@ package dbg.command;
 
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.LocatableEvent;
+import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.StepRequest;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Command {
     private VirtualMachine vm;
     private LocatableEvent event;
     private StepRequest stepRequest;
     private String commandLine;
+    private List<BreakpointRequest> breakpointsToDisable;
 
     public Command(VirtualMachine vm) {
         this.vm = vm;
         stepRequest = null;
+        breakpointsToDisable = new ArrayList<>();
     }
 
+    public void checkBreakpointToDisable(){
+
+    }
     public abstract Object execute();
     public void print(){};
 
@@ -48,5 +57,17 @@ public abstract class Command {
 
     public void setCommandLine(String commandLine) {
         this.commandLine = commandLine;
+    }
+
+    public void addBreakpoint(BreakpointRequest breakpointRequest){
+        breakpointsToDisable.add(breakpointRequest);
+    }
+
+    public List<BreakpointRequest> getBreakpointsToDisable() {
+        return breakpointsToDisable;
+    }
+
+    public void setBreakpointsToDisable(List<BreakpointRequest> breakpointsToDisable) {
+        this.breakpointsToDisable = breakpointsToDisable;
     }
 }
