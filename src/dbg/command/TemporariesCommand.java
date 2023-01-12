@@ -2,35 +2,40 @@ package dbg.command;
 
 import com.sun.jdi.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class TemporariesCommand extends Command {
 
-    private StackFrame temporaries;
+    private Map<String, Value> temporaries;
 
     public TemporariesCommand(VirtualMachine vm) {
         super(vm);
-        temporaries = null;
+        temporaries = new HashMap<>();
     }
 
     @Override
     public Object execute() {
         FrameCommand frameCommand = new FrameCommand(getVm());
         frameCommand.setEvent(getEvent());
-        temporaries = (StackFrame) frameCommand.execute();
+        StackFrame frame = (StackFrame) frameCommand.execute();
+        try {
+            List<LocalVariable> variables = frame.visibleVariables();
+            Map<LocalVariable, Value> map = frame.getValues(variables);
+            for (Map.Entry<LocalVariable, Value> entry : map.entrySet()) {
+                temporaries.put(entry.getKey().name(), entry.getValue());
+            }
+        } catch (AbsentInformationException e) {
+            e.printStackTrace();
+        }
         return temporaries;
     }
 
     @Override
     public void print() {
-        try {
-            List<LocalVariable> variables = temporaries.visibleVariables();
-            Map<LocalVariable, Value> map = temporaries.getValues(variables);
-            variables.forEach(variable -> System.out.println(variable.name() + " -> " + map.get(variable)));
-            System.out.println();
-        } catch (AbsentInformationException e) {
-            e.printStackTrace();
+        for (Map.Entry<String, Value> entry : temporaries.entrySet()) {
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
         }
     }
 }

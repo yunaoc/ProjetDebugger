@@ -61,7 +61,6 @@ public class ScriptableDebugger {
         OutputStreamWriter writer = new OutputStreamWriter(System.out);
         boolean isInitialized = false;
         String commandLine = "";
-        boolean dispo = true;
 
         while ((eventSet = vm.eventQueue().remove()) != null) {
             for (Event event : eventSet) {
@@ -92,10 +91,7 @@ public class ScriptableDebugger {
                                 if (value == 0) {
                                     mapCommands.get("break-on-count").getBreakpointsToCount().remove(registerEvent);
                                     eventCommandActual = (BreakpointEvent) event;
-                                    dispo = true;
                                 } else {
-                                    dispo = false;
-                                    System.out.println("Map event : " + mapCommands.get("break-on-count").getBreakpointsToCount().get(registerEvent));
                                     mapCommands.get("break-on-count").getBreakpointsToCount().put(registerEvent, value - 1);
                                 }
                             } else {
@@ -108,7 +104,7 @@ public class ScriptableDebugger {
                     }
                 }
 
-                if (isInitialized && dispo) {
+                if (isInitialized && (null == event || null == mapCommands.get("break-on-count").getBreakpointsToCount().get(event.request()) || mapCommands.get("break-on-count").getBreakpointsToCount().get(event.request()) == 0)) {
                     commandLine = readCommand();
                     String sub = commandLine;
                     if (commandLine.contains("(")) {
@@ -123,6 +119,7 @@ public class ScriptableDebugger {
                     }
                     mapCommands.get(commandLine).setEvent(eventCommandActual);
                     mapCommands.get(commandLine).setCommandLine(sub);
+                    mapCommands.get(commandLine).setClassDebugged(debugClass);
 
                     if (commandLine.equals("step") || commandLine.equals("step-over") || commandLine.equals("continue")) {
                         vm.eventRequestManager().stepRequests().forEach(stepRequest -> vm.eventRequestManager().deleteEventRequest(stepRequest));
@@ -167,6 +164,7 @@ public class ScriptableDebugger {
         ReceiverVariablesCommand receiverVariablesCommand = new ReceiverVariablesCommand(vm);
         SenderCommand senderCommand = new SenderCommand(vm);
         BreakOnCountCommand breakOnCountCommand = new BreakOnCountCommand(vm);
+        BreakBeforeMethodCallCommand breakBeforeMethodCallCommand = new BreakBeforeMethodCallCommand(vm);
 
         mapCommands.put("step", stepCommand);
         mapCommands.put("step-over", stepOverCommand);
@@ -184,6 +182,7 @@ public class ScriptableDebugger {
         mapCommands.put("receiver-variables", receiverVariablesCommand);
         mapCommands.put("sender", senderCommand);
         mapCommands.put("break-on-count", breakOnCountCommand);
+        mapCommands.put("break-before-method-call", breakBeforeMethodCallCommand);
     }
 
 }

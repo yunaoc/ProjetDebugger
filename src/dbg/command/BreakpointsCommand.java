@@ -2,6 +2,7 @@ package dbg.command;
 
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.BreakpointRequest;
+import com.sun.jdi.request.EventRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,8 @@ public class BreakpointsCommand extends Command {
 
     @Override
     public Object execute() {
-        breakpointRequestList = getVm().eventRequestManager().breakpointRequests();
+        List<BreakpointRequest> allBreakpointRequestList = getVm().eventRequestManager().breakpointRequests();
+        breakpointRequestList = allBreakpointRequestList.stream().filter(EventRequest::isEnabled).toList();
         return breakpointRequestList;
     }
 

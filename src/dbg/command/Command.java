@@ -17,6 +17,7 @@ public abstract class Command {
     private String commandLine;
     private final List<BreakpointRequest> breakpointsToDisable;
     private final Map<BreakpointRequest, Integer> breakpointsToCount;
+    private Class classDebugged;
 
     public Command(VirtualMachine vm) {
         this.vm = vm;
@@ -72,6 +73,14 @@ public abstract class Command {
 
     public Map<BreakpointRequest, Integer> getBreakpointsToCount() {
         return breakpointsToCount;
+    }
+
+    public Class getClassDebugged() {
+        return classDebugged;
+    }
+
+    public void setClassDebugged(Class classDebugged) {
+        this.classDebugged = classDebugged;
     }
 
     int indexSecondCommas() {
