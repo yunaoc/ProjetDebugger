@@ -1,6 +1,8 @@
 package dbg;
 
-import com.sun.jdi.*;
+import com.sun.jdi.Bootstrap;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 import com.sun.jdi.connect.LaunchingConnector;
@@ -8,14 +10,14 @@ import com.sun.jdi.connect.VMStartException;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
-import com.sun.jdi.request.StepRequest;
 import dbg.command.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ScriptableDebugger {
 
@@ -23,7 +25,6 @@ public class ScriptableDebugger {
     private VirtualMachine vm;
     private Map<String, Command> mapCommands;
     private LocatableEvent eventCommandActual;
-    private Set<LocatableEvent> breakpointsEvents;
 
     public VirtualMachine connectAndLaunchVM() throws IOException, IllegalConnectorArgumentsException, VMStartException {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
@@ -31,9 +32,9 @@ public class ScriptableDebugger {
         arguments.get("main").setValue(debugClass.getName());
         VirtualMachine vm = launchingConnector.launch(arguments);
         eventCommandActual = null;
-        breakpointsEvents = new HashSet<>();
         return vm;
     }
+
     public void attachTo(Class debuggeeClass) {
 
         this.debugClass = debuggeeClass;
@@ -42,22 +43,17 @@ public class ScriptableDebugger {
             enableClassPrepareRequest(vm);
             startDebugger();
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (IllegalConnectorArgumentsException e) {
-            e.printStackTrace();
         } catch (VMStartException e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            System.out.println(e);
         } catch (VMDisconnectedException e) {
-            System.out.println("Virtual Machine is disconnected: " + e.toString());
-        }
-        catch (Exception e) {
+            System.out.println("Virtual Machine is disconnected: " + e);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void startDebugger() throws VMDisconnectedException, InterruptedException, IOException, AbsentInformationException {
+    public void startDebugger() throws VMDisconnectedException, InterruptedException, IOException {
         EventSet eventSet = null;
         initializationCommands();
         System.out.println("Debuggee output ===");
@@ -73,68 +69,64 @@ public class ScriptableDebugger {
                 writer.write(buf);
                 writer.flush();
 
-                if(event instanceof VMDeathEvent){
+                if (event instanceof VMDeathEvent) {
                     isInitialized = false;
                 }
 
-                if(event instanceof ClassPrepareEvent) {
+                if (event instanceof ClassPrepareEvent) {
                     isInitialized = true;
                 }
 
-                if(event instanceof VMDisconnectEvent){
+                if (event instanceof VMDisconnectEvent) {
                     System.out.println("===End of program.");
                     return;
                 }
 
-                if(event instanceof BreakpointEvent){
-                    for(BreakpointRequest registerEvent : vm.eventRequestManager().breakpointRequests()){
-                        if(registerEvent.isEnabled() && event.request().equals(registerEvent)){
-                            eventCommandActual = (BreakpointEvent) event;
-                        }
-                        if(!registerEvent.isEnabled() && ((BreakpointEvent) event).location().equals(registerEvent.location())){
-                            eventCommandActual = (BreakpointEvent) event;
+                if (event instanceof BreakpointEvent) {
+                    System.out.println("Breakpoint : " + event);
+                    for (BreakpointRequest registerEvent : vm.eventRequestManager().breakpointRequests()) {
+                        if (registerEvent.isEnabled() && event.request().equals(registerEvent)) {
+                            Integer value = mapCommands.get("break-on-count").getBreakpointsToCount().get(registerEvent);
+                            if (null != value && event.request().equals(registerEvent)) {
+                                if (value == 0) {
+                                    mapCommands.get("break-on-count").getBreakpointsToCount().remove(registerEvent);
+                                    eventCommandActual = (BreakpointEvent) event;
+                                } else {
+                                    mapCommands.get("break-on-count").getBreakpointsToCount().put(registerEvent, value - 1);
+                                }
+                            } else {
+                                eventCommandActual = (BreakpointEvent) event;
+                                if (mapCommands.get("break-once").getBreakpointsToDisable().contains(registerEvent)) {
+                                    eventCommandActual.request().disable();
+                                }
+                            }
                         }
                     }
                 }
 
-                if(isInitialized){
+                if (isInitialized && (null == event || null == mapCommands.get("break-on-count").getBreakpointsToCount().get(event.request()) || mapCommands.get("break-on-count").getBreakpointsToCount().get(event.request()) == 0)) {
                     commandLine = readCommand();
                     String sub = commandLine;
-                    if(commandLine.contains("(")){
-                        commandLine = commandLine.substring(0,commandLine.indexOf("("));
+                    if (commandLine.contains("(")) {
+                        commandLine = commandLine.substring(0, commandLine.indexOf("("));
+                    }
+                    while (!mapCommands.containsKey(commandLine)) {
+                        commandLine = readCommand();
+                        sub = commandLine;
+                        if (commandLine.contains("(")) {
+                            commandLine = commandLine.substring(0, commandLine.indexOf("("));
+                        }
                     }
                     mapCommands.get(commandLine).setEvent(eventCommandActual);
                     mapCommands.get(commandLine).setCommandLine(sub);
+                    mapCommands.get(commandLine).setClassDebugged(debugClass);
 
-                    boolean isModifStepRequest = commandLine.equals("step") || commandLine.equals("step-over") || commandLine.equals("continue");
-
-//                    if(null != mapCommands.get("break").getStepRequest()){
-//                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("break").getStepRequest());
-//                        mapCommands.get("break").setStepRequest(null);
-//                    }
-                    if(null != mapCommands.get("step").getStepRequest() && isModifStepRequest){
-                        mapCommands.get(commandLine).setStepRequest(mapCommands.get("step").getStepRequest());
-                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("step").getStepRequest());
-                    }
-                    else if(null != mapCommands.get("step-over").getStepRequest() && isModifStepRequest){
-                        mapCommands.get(commandLine).setStepRequest(mapCommands.get("step-over").getStepRequest());
-                        vm.eventRequestManager().deleteEventRequest(mapCommands.get("step-over").getStepRequest());
-                    }
-                    //TODO clean-up
-                    if(commandLine.equals("break") && null != eventCommandActual){
-                        mapCommands.get("step").setEvent(eventCommandActual);
-                        vm.eventRequestManager().stepRequests().forEach(stepRequest ->vm.eventRequestManager().deleteEventRequest(stepRequest));
-                        mapCommands.get("step").execute();
+                    if (commandLine.equals("step") || commandLine.equals("step-over") || commandLine.equals("continue")) {
+                        vm.eventRequestManager().stepRequests().forEach(stepRequest -> vm.eventRequestManager().deleteEventRequest(stepRequest));
                     }
                     mapCommands.get(commandLine).execute();
-                    if(commandLine.equals("break") && null != eventCommandActual){
-                        mapCommands.get("step").setEvent(eventCommandActual);
-                        vm.eventRequestManager().stepRequests().forEach(stepRequest ->vm.eventRequestManager().deleteEventRequest(stepRequest));
-                        mapCommands.get("step").execute();
-                    }
                     mapCommands.get(commandLine).print();
                 }
-
                 System.out.println(event.toString());
                 vm.resume();
             }
@@ -154,7 +146,7 @@ public class ScriptableDebugger {
         return reader.readLine();
     }
 
-    private void initializationCommands(){
+    private void initializationCommands() {
         mapCommands = new HashMap<>();
         StepCommand stepCommand = new StepCommand(vm);
         StepOverCommand stepOverCommand = new StepOverCommand(vm);
@@ -167,6 +159,12 @@ public class ScriptableDebugger {
         PrintVarCommand printVarCommand = new PrintVarCommand(vm);
         BreakCommand breakCommand = new BreakCommand(vm);
         BreakpointsCommand breakpointsCommand = new BreakpointsCommand(vm);
+        BreakOnceCommand breakOnceCommand = new BreakOnceCommand(vm);
+        ReceiverCommand receiverCommand = new ReceiverCommand(vm);
+        ReceiverVariablesCommand receiverVariablesCommand = new ReceiverVariablesCommand(vm);
+        SenderCommand senderCommand = new SenderCommand(vm);
+        BreakOnCountCommand breakOnCountCommand = new BreakOnCountCommand(vm);
+        BreakBeforeMethodCallCommand breakBeforeMethodCallCommand = new BreakBeforeMethodCallCommand(vm);
 
         mapCommands.put("step", stepCommand);
         mapCommands.put("step-over", stepOverCommand);
@@ -179,6 +177,12 @@ public class ScriptableDebugger {
         mapCommands.put("print-var", printVarCommand);
         mapCommands.put("break", breakCommand);
         mapCommands.put("breakpoints", breakpointsCommand);
+        mapCommands.put("break-once", breakOnceCommand);
+        mapCommands.put("receiver", receiverCommand);
+        mapCommands.put("receiver-variables", receiverVariablesCommand);
+        mapCommands.put("sender", senderCommand);
+        mapCommands.put("break-on-count", breakOnCountCommand);
+        mapCommands.put("break-before-method-call", breakBeforeMethodCallCommand);
     }
 
 }

@@ -1,11 +1,10 @@
 package dbg.command;
 
-import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Method;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.VirtualMachine;
 
-public class MethodCommand extends Command{
+public class MethodCommand extends Command {
 
     private Method method;
 
@@ -23,7 +22,7 @@ public class MethodCommand extends Command{
     }
 
     @Override
-    public void print(){
+    public void print() {
         System.out.println(method.name());
     }
 }
