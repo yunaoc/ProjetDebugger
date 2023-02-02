@@ -2,6 +2,7 @@ package dbg.command;
 
 import com.sun.jdi.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,8 @@ public class ArgumentsCommand extends Command {
         StackFrame frame = (StackFrame) frameCommand.execute();
         Method method = (Method) methodCommand.execute();
         try {
-            List<LocalVariable> arguments = method.arguments();
+            List<LocalVariable> arguments = new ArrayList<>();
+            arguments = method.arguments();
             valeurs = frame.getValues(arguments);
         } catch (AbsentInformationException e) {
             e.printStackTrace();
